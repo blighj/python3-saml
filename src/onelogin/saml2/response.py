@@ -235,30 +235,37 @@ class OneLogin_Saml2_Response(object):
                 # Checks the SubjectConfirmation, at least one SubjectConfirmation must be valid
                 any_subject_confirmation = False
                 subject_confirmation_nodes = self._query_assertion('/saml:Subject/saml:SubjectConfirmation')
+                subject_errors = ''
 
                 for scn in subject_confirmation_nodes:
                     method = scn.get('Method', None)
                     if method and method != OneLogin_Saml2_Constants.CM_BEARER:
+                        subject_errors += ' Invalid Method.'
                         continue
                     sc_data = scn.find('saml:SubjectConfirmationData', namespaces=OneLogin_Saml2_Constants.NSMAP)
                     if sc_data is None:
+                        subject_errors += ' No SubjectConfirmationData found.
                         continue
                     else:
                         irt = sc_data.get('InResponseTo', None)
                         if in_response_to and irt and irt != in_response_to:
+                            subject_errors += ' InResponseTo does not match %s' % in_response_to
                             continue
                         recipient = sc_data.get('Recipient', None)
                         if recipient and current_url not in recipient:
+                            subject_errors += ' Recipient does not match current_url %s' % current_url
                             continue
                         nooa = sc_data.get('NotOnOrAfter', None)
                         if nooa:
                             parsed_nooa = OneLogin_Saml2_Utils.parse_SAML_to_time(nooa)
                             if parsed_nooa <= OneLogin_Saml2_Utils.now():
+                                subject_errors += ' NotOnOrAfter is after %s' % str(OneLogin_Saml2_Utils.now())
                                 continue
                         nb = sc_data.get('NotBefore', None)
                         if nb:
                             parsed_nb = OneLogin_Saml2_Utils.parse_SAML_to_time(nb)
                             if parsed_nb > OneLogin_Saml2_Utils.now():
+                                subject_errors += ' NotBefore is before %s' % str(OneLogin_Saml2_Utils.now())
                                 continue
 
                         if nooa:
@@ -269,7 +276,7 @@ class OneLogin_Saml2_Response(object):
 
                 if not any_subject_confirmation:
                     raise OneLogin_Saml2_ValidationError(
-                        'A valid SubjectConfirmation was not found on this Response',
+                        'A valid SubjectConfirmation was not found on this Response' + subject_errors,
                         OneLogin_Saml2_ValidationError.WRONG_SUBJECTCONFIRMATION
                     )
 
