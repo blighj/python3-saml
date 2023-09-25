@@ -244,7 +244,7 @@ class OneLogin_Saml2_Response(object):
                         continue
                     sc_data = scn.find('saml:SubjectConfirmationData', namespaces=OneLogin_Saml2_Constants.NSMAP)
                     if sc_data is None:
-                        subject_errors += ' No SubjectConfirmationData found.
+                        subject_errors += ' No SubjectConfirmationData found.'
                         continue
                     else:
                         irt = sc_data.get('InResponseTo', None)
